@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1% Better — Morning Briefing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0d;
+    --paper: #f5f0e8;
+    --accent: #c8a96e;
+    --muted: #8a8278;
+    --rule: #d4cfc6;
+    --alert: #8b2020;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* MASTHEAD */
+  .masthead {
+    border-bottom: 1px solid #2a2825;
+    padding: 28px 48px 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .masthead-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .masthead-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--paper);
+    letter-spacing: -0.02em;
+  }
+
+  .masthead-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 6px;
+  }
+
+  .masthead-date {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  #live-date {
+    font-size: 14px;
+    color: var(--paper);
+    font-family: 'Playfair Display', serif;
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    padding: 16px 48px;
+    border-bottom: 1px solid #2a2825;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--accent); color: var(--ink); }
+  .btn.primary { background: var(--accent); color: var(--ink); }
+  .btn.primary:hover { background: #e0bf80; border-color: #e0bf80; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .status-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 4px 0;
+  }
+
+  .status-pill.live { color: #4a9e6b; }
+  .status-pill.loading { color: var(--accent); }
+  .status-pill.error { color: var(--alert); }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* FEED COLUMN */
+  .feed-col {
+    border-right: 1px solid #2a2825;
+    padding: 32px 48px;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2a2825;
+  }
+
+  /* STORY CARD */
+  .story-card {
+    border-bottom: 1px solid #1e1d1b;
+    padding: 20px 0;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .story-card:hover { background: #161514; margin: 0 -48px; padding: 20px 48px; }
+
+  .story-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .source-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--accent);
+    padding: 2px 7px;
+  }
+
+  .story-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .nate-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: #4a9e6b;
+    border: 1px solid #4a9e6b;
+    padding: 1px 6px;
+    margin-left: auto;
+  }
+
+  .story-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--paper);
+    margin-bottom: 6px;
+  }
+
+  .story-excerpt {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .story-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .story-link:hover { text-decoration: underline; }
+
+  /* SELECT CHECKBOX */
+  .story-select {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .story-check {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #3a3835;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 4px;
+    appearance: none;
+    position: relative;
+    transition: all 0.1s;
+  }
+
+  .story-check:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .story-check:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -1px;
+    left: 2px;
+    font-size: 11px;
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* DRAFT PANEL */
+  .draft-col {
+    padding: 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .draft-panel {
+    background: #161514;
+    border: 1px solid #2a2825;
+    padding: 24px;
+  }
+
+  .draft-panel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .draft-count {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .prompt-box {
+    background: #0f0e0d;
+    border: 1px solid #2a2825;
+    padding: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    color: #c8c4bc;
+    min-height: 280px;
+    max-height: 420px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .prompt-box::-webkit-scrollbar { width: 4px; }
+  .prompt-box::-webkit-scrollbar-track { background: #0f0e0d; }
+  .prompt-box::-webkit-scrollbar-thumb { background: #2a2825; }
+
+  .tone-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tone-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .tone-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tone-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 6px 12px;
+    border: 1px solid #2a2825;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    text-transform: uppercase;
+  }
+
+  .tone-btn:hover, .tone-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SOURCES PANEL */
+  .sources-panel {
+    background: #161514;
+    border: 1px solid #2a2825;
+    padding: 20px;
+  }
+
+  .source-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #1e1d1b;
+  }
+
+  .source-row:last-child { border-bottom: none; }
+
+  .source-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--paper);
+  }
+
+  .source-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+
+  .source-status.ok { color: #4a9e6b; }
+  .source-status.pending { color: var(--accent); }
+  .source-status.fail { color: var(--alert); }
+
+  /* EMPTY / LOADING STATES */
+  .empty-state {
+    padding: 60px 0;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #2a2825;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* COPY TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 12px 28px;
+    opacity: 0;
+    transition: all 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* NATE FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border: 1px solid #2a2825;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    text-transform: uppercase;
+  }
+
+  .filter-chip:hover, .filter-chip.active {
+    border-color: var(--paper);
+    color: var(--paper);
+  }
+
+  /* SELECTED COUNTER */
+  .selected-bar {
+    background: #1a1917;
+    border: 1px solid var(--accent);
+    padding: 10px 16px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .selected-bar.visible { display: flex; }
+
+  .selected-bar span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .draft-col { border-top: 1px solid #2a2825; }
+    .masthead { padding: 20px 24px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .masthead-name { font-size: 36px; }
+    .toolbar { padding: 12px 24px; }
+    .feed-col { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div>
+    <div class="masthead-title">Morning Briefing System</div>
+    <div class="masthead-name">1% Better</div>
+    <div class="masthead-sub">FILTERED THROUGH NATE · READY TO DRAFT</div>
+  </div>
+  <div class="masthead-date">
+    <span>TODAY</span>
+    <span id="live-date">—</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button class="btn primary" id="fetchBtn" onclick="fetchAll()">↓ Pull Today's Stories</button>
+  <button class="btn" id="buildBtn" onclick="buildPrompt()" disabled>Build Draft Prompt</button>
+  <button class="btn" id="copyBtn" onclick="copyPrompt()" disabled>Copy to Clipboard</button>
+  <input id="claudeApiKey" type="password" placeholder="Claude API Key" style="background:#0f0e0d;border:1px solid #2a2825;color:#c8c4bc;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 12px;outline:none;width:220px;">
+  <button class="btn" onclick="saveApiKey()">Save Key</button>
+  <span class="status-pill" id="statusPill">Ready to pull</span>
+</div>
+
+<div class="main">
+
+  <!-- FEED COLUMN -->
+  <div class="feed-col">
+
+    <div class="filter-bar" id="filterBar" style="display:none">
+      <button class="filter-chip active" onclick="filterStories('all', this)">All</button>
+      <button class="filter-chip" onclick="filterStories('finance', this)">Finance</button>
+      <button class="filter-chip" onclick="filterStories('business', this)">Business</button>
+      <button class="filter-chip" onclick="filterStories('life', this)">Life/Health</button>
+      <button class="filter-chip" onclick="filterStories('nate', this)">Nate Picks ✓</button>
+    </div>
+
+    <div class="selected-bar" id="selectedBar">
+      <span id="selectedCount">0 stories selected</span>
+      <span>Check stories to include in your draft</span>
+    </div>
+
+    <div class="section-label">Today's Briefing</div>
+
+    <div id="storiesList">
+      <div class="empty-state">Hit "Pull Today's Stories" to fetch the latest from all sources.</div>
+    </div>
+
+  </div>
+
+  <!-- DRAFT / RIGHT COLUMN -->
+  <div class="draft-col">
+
+    <!-- TONE -->
+    <div class="draft-panel">
+      <div class="draft-panel-label">Draft Tone</div>
+      <div class="tone-selector">
+        <div class="tone-label">Write this edition as...</div>
+        <div class="tone-options">
+          <button class="tone-btn active" onclick="setTone('story', this)">Story-led</button>
+          <button class="tone-btn" onclick="setTone('tactical', this)">Tactical</button>
+          <button class="tone-btn" onclick="setTone('contrarian', this)">Contrarian</button>
+          <button class="tone-btn" onclick="setTone('inspirational', this)">Inspirational</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOOGLE SHEET QUEUE -->
+    <div class="draft-panel">
+      <div class="draft-panel-label">Your Editorial Queue <span style="color:var(--muted);font-size:9px;letter-spacing:.08em">(GOOGLE SHEET)</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <input id="scriptUrl" type="text" placeholder="Paste your Apps Script Web App URL here" style="width:100%;background:#0f0e0d;border:1px solid #2a2825;color:#c8c4bc;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:9px 12px;outline:none;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn" id="sheetFetchBtn" onclick="fetchQueue()" style="flex:1;">Pull Queue</button>
+          <button class="btn" onclick="saveScriptUrl()" style="flex:1;">Save URL</button>
+        </div>
+        <div id="sheetStatus" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8a8278;min-height:14px;letter-spacing:.06em;"></div>
+      </div>
+      <div id="sheetItemsList" style="max-height:260px;overflow-y:auto;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8278;padding:8px 0;">Paste your Apps Script URL above and pull your queue. Links you drop into the sheet appear here, ranked by Nate score. Used links are removed automatically after each session.</div>
+      </div>
+    </div>
+
+    <!-- WSJ MANUAL PASTE -->
+    <div class="draft-panel">
+      <div class="draft-panel-label">WSJ Full Text <span style="color:var(--muted);font-size:9px;letter-spacing:.08em">(OPTIONAL — PASTE FROM YOUR ACCOUNT)</span></div>
+      <textarea id="wsjPaste" placeholder="Find a WSJ story in your account, copy the full text, paste it here. It will be included in your draft prompt automatically." style="width:100%;background:#0f0e0d;border:1px solid #2a2825;color:#c8c4bc;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;padding:14px;resize:vertical;min-height:100px;outline:none;"></textarea>
+    </div>
+
+    <!-- PROMPT OUTPUT -->
+    <div class="draft-panel">
+      <div class="draft-panel-label">
+        Claude Draft Prompt
+        <span class="draft-count" id="promptWordCount">—</span>
+      </div>
+      <div class="prompt-box" id="promptBox">Select stories above, choose a tone, then hit "Build Draft Prompt." Copy it into a new Claude chat.</div>
+    </div>
+
+    <!-- SOURCES STATUS -->
+    <div class="sources-panel">
+      <div class="draft-panel-label" style="margin-bottom:12px">Source Status</div>
+      <div id="sourceStatusList">
+        <div class="source-row"><span class="source-name">AP News</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Reuters</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Axios</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Forbes</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Inc. Magazine</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Fast Company</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Morning Brew</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Politico</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">WSJ (headlines)</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">James Clear</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Tim Ferriss</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Farnam Street</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Mark Manson</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Huberman Lab</span><span class="source-status pending">—</span></div>
+        <div class="source-row"><span class="source-name">Modern Wisdom</span><span class="source-status pending">—</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">Prompt copied to clipboard</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+
+const SOURCES = [
+  // News
+  { name: "AP News",         rss: "https://feeds.apnews.com/rss/apf-topnews",                      type: "full",      category: "business" },
+  { name: "Reuters",         rss: "https://feeds.reuters.com/reuters/businessNews",                 type: "full",      category: "business" },
+  { name: "Axios",           rss: "https://api.axios.com/feed/",                                    type: "full",      category: "business" },
+  { name: "Forbes",          rss: "https://www.forbes.com/real-time/feed2/",                        type: "full",      category: "finance"  },
+  { name: "Inc. Magazine",   rss: "https://www.inc.com/rss",                                        type: "full",      category: "business" },
+  { name: "Fast Company",    rss: "https://www.fastcompany.com/latest/rss",                         type: "full",      category: "business" },
+  { name: "Morning Brew",    rss: "https://www.morningbrew.com/daily/rss",                          type: "full",      category: "business" },
+  { name: "Politico",        rss: "https://www.politico.com/rss/politicopicks.xml",                 type: "full",      category: "business" },
+  { name: "WSJ",             rss: "https://feeds.a.dj.com/rss/RSSWorldNews.xml",                    type: "headlines", category: "finance"  },
+  // Life advice
+  { name: "James Clear",     rss: "https://jamesclear.com/feed",                                    type: "full",      category: "life"     },
+  { name: "Tim Ferriss",     rss: "https://tim.blog/feed/",                                         type: "full",      category: "life"     },
+  { name: "Farnam Street",   rss: "https://fs.blog/feed/",                                          type: "full",      category: "life"     },
+  { name: "Mark Manson",     rss: "https://markmanson.net/feed",                                    type: "full",      category: "life"     },
+  { name: "Huberman Lab",    rss: "https://feeds.libsyn.com/261098/rss",                            type: "full",      category: "life"     },
+  { name: "Modern Wisdom",   rss: "https://feeds.transistor.fm/modern-wisdom",                      type: "full",      category: "life"     },
+];
+
+const PROXY = "https://corsproxy.io/?";
+
+// NATE FILTER KEYWORDS
+const NATE_FINANCE  = ["invest", "money", "wealth", "income", "salary", "finance", "stock", "market", "dollar", "profit", "revenue", "entrepreneur", "startup", "business owner"];
+const NATE_EXPERT   = ["according to", "says", "reveals", "shares", "expert", "study", "research"];
+const NATE_AVOID    = ["politics", "election", "celebrity", "sports", "weather", "crime"];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+
+let allStories = [];
+let sheetItems = [];
+let selectedIds = new Set();
+let selectedSheetIds = new Set();
+let currentTone = 'story';
+let currentFilter = 'all';
+let sourceStatuses = {};
+
+// ─── DATE ─────────────────────────────────────────────────────────────────────
+
+function updateDate() {
+  const d = new Date();
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', opts);
+}
+updateDate();
+
+// ─── NATE SCORING ─────────────────────────────────────────────────────────────
+
+function nateScore(story) {
+  const text = (story.title + ' ' + story.excerpt).toLowerCase();
+  let score = 0;
+  NATE_FINANCE.forEach(k => { if (text.includes(k)) score += 2; });
+  NATE_EXPERT.forEach(k => { if (text.includes(k)) score += 1; });
+  NATE_AVOID.forEach(k => { if (text.includes(k)) score -= 3; });
+  return score;
+}
+
+// ─── GOOGLE SHEET VIA APPS SCRIPT ────────────────────────────────────────────
+
+let usedSheetRowIndices = []; // track which rows to delete after prompt build
+
+function saveScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (url) {
+    localStorage.setItem('1pb_scripturl', url);
+    showSheetStatus('URL saved.', false);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('1pb_scripturl');
+  if (saved) document.getElementById('scriptUrl').value = saved;
+});
+
+async function fetchQueue() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url) { showSheetStatus('Paste your Apps Script URL first.', true); return; }
+
+  const btn = document.getElementById('sheetFetchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Pulling...';
+  showSheetStatus('Fetching queue...', false);
+
+  try {
+    const res  = await fetch(url + '?action=get', { redirect: 'follow' });
+    const data = await res.json();
+
+    if (!data.items || !data.items.length) {
+      showSheetStatus('Queue is empty. Drop some links in your sheet.', false);
+      sheetItems = [];
+      renderSheetItems();
+      btn.disabled = false;
+      btn.textContent = 'Pull Queue';
+      return;
+    }
+
+    // Score and sort by Nate relevance
+    sheetItems = data.items.map((item, i) => {
+      const score = nateScoreText(item.title + ' ' + item.notes);
+      return { ...item, id: 'sheet-' + i, score };
+    }).sort((a, b) => b.score - a.score);
+
+    renderSheetItems();
+    showSheetStatus(`✓ ${sheetItems.length} links in queue`, false);
+  } catch(e) {
+    showSheetStatus('Could not reach your Apps Script. Check the URL.', true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Pull Queue';
+}
+
+function nateScoreText(text) {
+  const t = (text || '').toLowerCase();
+  let score = 0;
+  NATE_FINANCE.forEach(k => { if (t.includes(k)) score += 2; });
+  NATE_EXPERT.forEach(k  => { if (t.includes(k)) score += 1; });
+  NATE_AVOID.forEach(k   => { if (t.includes(k)) score -= 3; });
+  return score;
+}
+
+async function removeUsedFromSheet(rowIndices) {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url || !rowIndices.length) return;
+  try {
+    await fetch(url + '?action=remove&rows=' + rowIndices.join(','), { redirect: 'follow' });
+  } catch(e) {
+    // Silent fail
+  }
+}
+
+function showSheetStatus(msg, isError) {
+  const el = document.getElementById('sheetStatus');
+  el.textContent = msg;
+  el.style.color = isError ? '#8b2020' : '#4a9e6b';
+}
+
+function renderSheetItems() {
+  const list = document.getElementById('sheetItemsList');
+  if (!sheetItems.length) {
+    list.innerHTML = '<div style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#8a8278;padding:8px 0;">No items in queue.</div>';
+    return;
+  }
+
+  list.innerHTML = sheetItems.map(item => `
+    <div style="padding:10px 0;border-bottom:1px solid #1e1d1b;" id="qrow-${item.id}">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <input type="checkbox" class="story-check" id="schk-${item.id}" onchange="toggleSheetItem('${item.id}')">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;background:#2a2825;color:#c8c4bc;padding:2px 6px;">${item.category || 'link'}</span>
+            ${item.score >= 2 ? '<span style="font-family:IBM Plex Mono,monospace;font-size:9px;color:#4a9e6b;border:1px solid #4a9e6b;padding:1px 5px;letter-spacing:.08em;">NATE ✓</span>' : ''}
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:14px;color:#f5f0e8;line-height:1.3;margin-bottom:3px;">${item.title || item.url}</div>
+          ${item.notes ? `<div style="font-size:11px;color:#8a8278;line-height:1.5;margin-bottom:3px;">${item.notes}</div>` : ''}
+          <a href="${item.url}" target="_blank" rel="noopener" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c8a96e;text-decoration:none;">Open →</a>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSheetItem(id) {
+  if (selectedSheetIds.has(id)) selectedSheetIds.delete(id);
+  else selectedSheetIds.add(id);
+}
+
+
+
+
+// ─── API KEY ──────────────────────────────────────────────────────────────────
+
+function saveApiKey() {
+  const key = document.getElementById('claudeApiKey').value.trim();
+  if (key) {
+    localStorage.setItem('1pb_claudekey', key);
+    setStatus('live', '✓ Key saved');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('1pb_claudekey');
+  if (saved) document.getElementById('claudeApiKey').value = saved;
+  const savedScript = localStorage.getItem('1pb_scripturl');
+  if (savedScript) document.getElementById('scriptUrl').value = savedScript;
+});
+
+// ─── FETCH VIA CLAUDE API ─────────────────────────────────────────────────────
+
+async function fetchAll() {
+  const apiKey = document.getElementById('claudeApiKey').value.trim();
+  if (!apiKey) {
+    setStatus('error', 'Paste your Claude API key first');
+    return;
+  }
+
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  setStatus('loading', '⬤ Claude is scanning today\'s news...');
+  allStories = [];
+  selectedIds.clear();
+  updateSourceStatuses('pending');
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: `You are a news researcher for a daily newsletter called 1% Better. Today is ${today}. Find real stories from today. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Just the raw JSON array.`,
+        messages: [{
+          role: 'user',
+          content: `Search for today's top stories and return exactly 15 as a JSON array.
+
+Categories:
+- Business and entrepreneurship (5 stories)
+- Personal finance and investing (4 stories)
+- Life advice and health from named experts (4 stories)
+- Interesting or surprising fun facts (2 stories)
+
+Each story must follow this exact structure:
+[{"title":"...","excerpt":"2-3 sentence summary of the story","url":"...","source":"publication name","category":"business or finance or life or fun","nateScore":7}]
+
+Nate scoring (0-10): High scores for personal finance, entrepreneurship, named expert insights, self-improvement tips. Low scores for politics, celebrity, sports, weather.
+
+Return ONLY the JSON array. Nothing before it, nothing after it.`
+        }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const textBlock = data.content?.find(b => b.type === 'text');
+    if (!textBlock) throw new Error('No text in response');
+
+    const clean = textBlock.text.replace(/```json|```/g, '').trim();
+    const stories = JSON.parse(clean);
+
+    allStories = stories.map((s, i) => ({
+      id:        'claude-' + i,
+      title:     s.title || '',
+      excerpt:   s.excerpt || '',
+      link:      s.url || '#',
+      source:    s.source || 'News',
+      category:  s.category || 'business',
+      type:      'full',
+      pubDate:   '',
+      nate:      (s.nateScore || 0) >= 6,
+      nateScore: s.nateScore || 0,
+    })).sort((a, b) => b.nateScore - a.nateScore);
+
+    SOURCES.forEach(s => updateSourceStatusRow(s.name, 'ok', '✓'));
+    renderStories(allStories);
+    document.getElementById('filterBar').style.display = 'flex';
+    document.getElementById('buildBtn').disabled = false;
+
+    const natePicks = allStories.filter(s => s.nate).length;
+    setStatus('live', `✓ ${allStories.length} stories · ${natePicks} Nate picks`);
+
+  } catch(e) {
+    setStatus('error', 'Error: ' + (e.message || 'Check your API key'));
+    SOURCES.forEach(s => updateSourceStatusRow(s.name, 'fail', 0));
+  }
+
+  btn.disabled = false;
+}
+
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+
+function renderStories(stories) {
+  const list = document.getElementById('storiesList');
+
+  if (!stories.length) {
+    list.innerHTML = '<div class="empty-state">No stories matched this filter.</div>';
+    return;
+  }
+
+  list.innerHTML = stories.map(story => `
+    <div class="story-card fade-in" id="card-${story.id}" data-category="${story.category}" data-nate="${story.nate}">
+      <div class="story-select">
+        <input type="checkbox" class="story-check" id="chk-${story.id}" onchange="toggleStory('${story.id}')">
+        <div style="flex:1">
+          <div class="story-meta">
+            <span class="source-tag">${story.source}</span>
+            ${story.pubDate ? `<span class="story-time">${formatTime(story.pubDate)}</span>` : ''}
+            ${story.type === 'headlines' ? '<span style="font-family:IBM Plex Mono,monospace;font-size:9px;color:#8a8278;letter-spacing:.1em">HEADLINE ONLY</span>' : ''}
+            ${story.nate ? '<span class="nate-badge">NATE ✓</span>' : ''}
+          </div>
+          <div class="story-title">${story.title}</div>
+          ${story.excerpt ? `<div class="story-excerpt">${story.excerpt}</div>` : ''}
+          ${story.link !== '#' ? `<a class="story-link" href="${story.link}" target="_blank" rel="noopener">Read full story →</a>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function formatTime(pubDate) {
+  try {
+    const d = new Date(pubDate);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  } catch(e) { return ''; }
+}
+
+// ─── FILTER ───────────────────────────────────────────────────────────────────
+
+function filterStories(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  let filtered = allStories;
+  if (filter === 'nate') filtered = allStories.filter(s => s.nate);
+  else if (filter !== 'all') filtered = allStories.filter(s => s.category === filter);
+
+  renderStories(filtered);
+}
+
+// ─── SELECT ───────────────────────────────────────────────────────────────────
+
+function toggleStory(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+
+  const bar = document.getElementById('selectedBar');
+  const count = selectedIds.size;
+  document.getElementById('selectedCount').textContent = `${count} stor${count === 1 ? 'y' : 'ies'} selected`;
+  bar.classList.toggle('visible', count > 0);
+}
+
+// ─── TONE ─────────────────────────────────────────────────────────────────────
+
+function setTone(tone, btn) {
+  currentTone = tone;
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+const TONE_INSTRUCTIONS = {
+  story:         "Lead with a human story or vivid scene before pulling back to the big idea. Make Nate feel something before you make him think something.",
+  tactical:      "Open with the key insight immediately. Give Nate 2-3 concrete things he can do or think about differently by the end. No fluff.",
+  contrarian:    "Start by challenging conventional wisdom. Make Nate question what he thought he knew. Build the case, then land on a surprising but defensible conclusion.",
+  inspirational: "Find the deeper meaning in today's story. Connect it to something Nate cares about -- his business, his family, his legacy. End with momentum."
+};
+
+// ─── BUILD PROMPT ─────────────────────────────────────────────────────────────
+
+function buildPrompt() {
+  const selected = allStories.filter(s => selectedIds.has(s.id));
+
+  if (!selected.length) {
+    // Use top 5 Nate picks if nothing selected
+    const picks = allStories.filter(s => s.nate).slice(0, 5);
+    if (!picks.length) {
+      document.getElementById('promptBox').textContent = 'No stories selected and no Nate picks found. Pull stories first, then select at least one.';
+      return;
+    }
+    buildFromStories(picks, true);
+  } else {
+    buildFromStories(selected, false);
+  }
+
+  document.getElementById('copyBtn').disabled = false;
+}
+
+function buildFromStories(stories, autoSelected) {
+  const storyBlock = stories.map((s, i) => {
+    const body = s.type === 'headlines'
+      ? `[Headline only -- use as angle/reference, do not summarize]`
+      : s.excerpt;
+    return `STORY ${i + 1}: ${s.source.toUpperCase()}\nTitle: ${s.title}\nSummary: ${body}\nURL: ${s.link}`;
+  }).join('\n\n---\n\n');
+
+  const toneInstruction = TONE_INSTRUCTIONS[currentTone];
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const wsjText = document.getElementById('wsjPaste').value.trim();
+  const wsjBlock = wsjText
+    ? `\n\n---\n\nWSJ FULL TEXT (from subscriber account):\n${wsjText}`
+    : '';
+
+  // Sheet queue items
+  const selectedSheet = sheetItems.filter(s => selectedSheetIds.has(s.id));
+  const sheetBlock = selectedSheet.length
+    ? '\n\n---\n\nFROM YOUR PERSONAL QUEUE (articles, videos, fun links you saved):\n' +
+      selectedSheet.map((s, i) =>
+        `QUEUE ITEM ${i+1} [${s.category.toUpperCase()}]\nTitle: ${s.title}\nURL: ${s.url}${s.notes ? '\nYour notes: ' + s.notes : ''}`
+      ).join('\n\n')
+    : '';
+
+  const prompt = `You are writing today's edition of 1% Better, a daily newsletter sent to 330,000+ business owners, entrepreneurs, and self-improvement readers. Today is ${today}.
+
+READER AVATAR: Nate. 35-42 year old business owner. Opens at 6:30am. Clicks on personal finance stakes and content featuring named experts. Ignores corporate jargon and anything that sounds like a press release.
+
+TONE DIRECTION: ${toneInstruction}
+
+NEWSLETTER FORMAT:
+- Subject line (write 3 options, ranked)
+- Preview text (1 sentence, 90 characters max)
+- Opening hook (2-3 sentences -- stop Nate from scrolling)
+- Body (400-600 words -- one big idea, one named example or expert, one stat or data point)
+- The 1% takeaway (2-3 sentences -- what Nate does differently today)
+- Sign-off (warm, brief, Brock's voice -- conversational, not corporate)
+
+STYLE RULES:
+- No em dashes
+- No buzzwords (leverage, ecosystem, synergy, disrupt)
+- Write like a smart friend texting Nate, not a content marketer
+- One idea per edition -- resist the urge to cram in multiple stories
+- If using a headline-only source, use it for context/angle only, do not invent details
+
+SOURCE MATERIAL FOR TODAY'S EDITION:
+${autoSelected ? '(Auto-selected top Nate picks -- you can swap the angle if a better one emerges from the material)\n\n' : ''}${storyBlock}${wsjBlock}${sheetBlock}
+
+Now write the full 1% Better edition. Start with the three subject line options.`;
+
+  document.getElementById('promptBox').textContent = prompt;
+  const wordCount = prompt.split(/\s+/).length;
+  document.getElementById('promptWordCount').textContent = `~${wordCount} words`;
+
+  // Remove used queue items from sheet automatically
+  const usedRows = selectedSheet.map(s => s.rowIndex).filter(r => r !== undefined);
+  if (usedRows.length) removeUsedFromSheet(usedRows);
+}
+
+// ─── COPY ─────────────────────────────────────────────────────────────────────
+
+function copyPrompt() {
+  const text = document.getElementById('promptBox').textContent;
+  if (!text || text.startsWith('Select stories')) return;
+  navigator.clipboard.writeText(text).then(() => showToast());
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── SOURCE STATUS ────────────────────────────────────────────────────────────
+
+function updateSourceStatuses(status) {
+  document.querySelectorAll('.source-status').forEach(el => {
+    el.className = 'source-status pending';
+    el.textContent = status === 'pending' ? '...' : '—';
+  });
+}
+
+function updateSourceStatusRow(name, status, count) {
+  const rows = document.querySelectorAll('#sourceStatusList .source-row');
+  rows.forEach(row => {
+    const nameEl = row.querySelector('.source-name');
+    if (nameEl && nameEl.textContent === name) {
+      const statusEl = row.querySelector('.source-status');
+      statusEl.className = `source-status ${status}`;
+      statusEl.textContent = status === 'ok' ? `✓ ${count}` : status === 'fail' ? 'ERR' : '...';
+    }
+  });
+}
+
+// ─── STATUS ───────────────────────────────────────────────────────────────────
+
+function setStatus(type, msg) {
+  const el = document.getElementById('statusPill');
+  el.className = `status-pill ${type}`;
+  el.textContent = msg;
+}
+</script>
+</body>
+</html>
