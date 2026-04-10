@@ -504,8 +504,6 @@
   <button class="btn primary" id="fetchBtn" onclick="fetchAll()">↓ Pull Today's Stories</button>
   <button class="btn" id="buildBtn" onclick="buildPrompt()" disabled>Build Draft Prompt</button>
   <button class="btn" id="copyBtn" onclick="copyPrompt()" disabled>Copy to Clipboard</button>
-  <input id="claudeApiKey" type="password" placeholder="Claude API Key" style="background:#0f0e0d;border:1px solid #2a2825;color:#c8c4bc;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 12px;outline:none;width:220px;">
-  <button class="btn" onclick="saveApiKey()">Save Key</button>
   <span class="status-pill" id="statusPill">Ready to pull</span>
 </div>
 
@@ -800,69 +798,24 @@ window.addEventListener('DOMContentLoaded', () => {
   if (savedScript) document.getElementById('scriptUrl').value = savedScript;
 });
 
-// ─── FETCH VIA CLAUDE API ─────────────────────────────────────────────────────
+// ─── FETCH VIA OPENCLAW ───────────────────────────────────────────────────────
 
 async function fetchAll() {
-  const apiKey = document.getElementById('claudeApiKey').value.trim();
-  if (!apiKey) {
-    setStatus('error', 'Paste your Claude API key first');
-    return;
-  }
-
   const btn = document.getElementById('fetchBtn');
   btn.disabled = true;
-  setStatus('loading', '⬤ Claude is scanning today\'s news...');
+  setStatus('loading', '⬤ OpenClaw is scanning today\'s news...');
   allStories = [];
   selectedIds.clear();
   updateSourceStatuses('pending');
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        system: `You are a news researcher for a daily newsletter called 1% Better. Today is ${today}. Find real stories from today. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Just the raw JSON array.`,
-        messages: [{
-          role: 'user',
-          content: `Search for today's top stories and return exactly 15 as a JSON array.
+    const res  = await fetch('http://192.168.1.128:5001/stories');
+    const data = await res.json();
 
-Categories:
-- Business and entrepreneurship (5 stories)
-- Personal finance and investing (4 stories)
-- Life advice and health from named experts (4 stories)
-- Interesting or surprising fun facts (2 stories)
+    if (!data.items || !data.items.length) throw new Error('No stories returned');
 
-Each story must follow this exact structure:
-[{"title":"...","excerpt":"2-3 sentence summary of the story","url":"...","source":"publication name","category":"business or finance or life or fun","nateScore":7}]
-
-Nate scoring (0-10): High scores for personal finance, entrepreneurship, named expert insights, self-improvement tips. Low scores for politics, celebrity, sports, weather.
-
-Return ONLY the JSON array. Nothing before it, nothing after it.`
-        }]
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.error) throw new Error(data.error.message);
-
-    const textBlock = data.content?.find(b => b.type === 'text');
-    if (!textBlock) throw new Error('No text in response');
-
-    const clean = textBlock.text.replace(/```json|```/g, '').trim();
-    const stories = JSON.parse(clean);
-
-    allStories = stories.map((s, i) => ({
-      id:        'claude-' + i,
+    allStories = data.items.map((s, i) => ({
+      id:        'oc-' + i,
       title:     s.title || '',
       excerpt:   s.excerpt || '',
       link:      s.url || '#',
@@ -883,7 +836,7 @@ Return ONLY the JSON array. Nothing before it, nothing after it.`
     setStatus('live', `✓ ${allStories.length} stories · ${natePicks} Nate picks`);
 
   } catch(e) {
-    setStatus('error', 'Error: ' + (e.message || 'Check your API key'));
+    setStatus('error', 'Error: ' + (e.message || 'Could not reach OpenClaw server'));
     SOURCES.forEach(s => updateSourceStatusRow(s.name, 'fail', 0));
   }
 
