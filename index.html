@@ -278,6 +278,7 @@ async function fetchAll() {
       const repeat   = isRepeat(s.title);
       return { id:'oc-'+i, title:s.title||'', excerpt:s.excerpt||'', link:s.url||'#',
                source:s.source||'News', category:s.category||'business', type:'full',
+               publishedDate: s.publishedDate||'',
                nate: score >= 6, override, repeat, score: override ? Math.max(score,5) : score };
     }).sort((a, b) => b.score - a.score);
 
@@ -309,6 +310,7 @@ function renderStories(stories) {
           <div class="story-meta">
             <span class="source-tag">${s.source}</span>
             <span class="cat-tag">${s.category}</span>
+            ${s.publishedDate ? `<span class="story-time" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${s.publishedDate}</span>` : ''}
             ${s.override?'<span class="override-badge">TOP STORY</span>':s.nate?'<span class="nate-badge">NATE ✓</span>':''}
             ${s.repeat?'<span class="repeat-tag">REPEAT?</span>':''}
           </div>
