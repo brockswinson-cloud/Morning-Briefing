@@ -115,6 +115,7 @@
   <button class="btn primary" id="fetchBtn" onclick="fetchAll()">↓ Pull Today's Stories</button>
   <button class="btn" id="buildBtn" onclick="buildPrompt()" disabled>Build Prompt</button>
   <button class="btn" id="copyBtn" onclick="copyPrompt()" disabled>Copy to Clipboard</button>
+  <button class="btn" onclick="exportRatings()" title="Copy ratings data to clipboard">Export Ratings</button>
   <span class="status-pill" id="statusPill">Ready to pull</span>
 </div>
 
@@ -231,6 +232,16 @@ function nateScoreText(text) {
   return score;
 }
 
+function isValidArticleUrl(url) {
+  if (!url || url === '#') return false;
+  try {
+    const u = new URL(url);
+    if (u.pathname === '/' || u.pathname === '') return false;
+    if (u.pathname.replace(/\//g, '').length < 3) return false;
+    return true;
+  } catch(e) { return false; }
+}
+
 function isOverride(s) {
   return OVERRIDE_KW.some(k => (s.title + ' ' + s.excerpt).toLowerCase().includes(k));
 }
@@ -272,6 +283,8 @@ async function fetchAll() {
     const data = await res.json();
     if (!data.items || !data.items.length) throw new Error('No stories returned');
 
+    const RANK_ORDER = { top: 0, mid: 1, life: 2, fun: 3 };
+
     allStories = data.items.map((s, i) => {
       const score    = s.nateScore || nateScoreText(s.title + ' ' + (s.excerpt||''));
       const override = isOverride(s);
@@ -279,8 +292,15 @@ async function fetchAll() {
       return { id:'oc-'+i, title:s.title||'', excerpt:s.excerpt||'', link:s.url||'#',
                source:s.source||'News', category:s.category||'business', type:'full',
                publishedDate: s.publishedDate||'',
+               suggestedTitle: s.suggestedTitle||'',
+               rank: s.rank||'mid',
+               validUrl: isValidArticleUrl(s.url),
                nate: score >= 6, override, repeat, score: override ? Math.max(score,5) : score };
-    }).sort((a, b) => b.score - a.score);
+    }).sort((a, b) => {
+      const rankDiff = (RANK_ORDER[a.rank]||1) - (RANK_ORDER[b.rank]||1);
+      if (rankDiff !== 0) return rankDiff;
+      return b.score - a.score;
+    });
 
     document.getElementById('ocStatus').className = 'source-status ok';
     document.getElementById('ocStatus').textContent = `✓ ${allStories.length}`;
@@ -299,10 +319,37 @@ async function fetchAll() {
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
+const RANK_LABELS = { top: '▲ Top Story Candidates', mid: 'Mid Stories', life: 'Life Advice', fun: 'Fun Links' };
+const RANK_KEYS = ['top', 'mid', 'life', 'fun'];
+
 function renderStories(stories) {
   const list = document.getElementById('storiesList');
   if (!stories.length) { list.innerHTML = '<div class="empty-state">No stories matched this filter.</div>'; return; }
-  list.innerHTML = stories.map(s => `
+
+  // Check if we're in filtered mode (no grouping) or all mode (grouping)
+  const isGrouped = stories.length === allStories.length;
+
+  if (isGrouped) {
+    const groups = {};
+    RANK_KEYS.forEach(k => groups[k] = []);
+    stories.forEach(s => { const r = s.rank||'mid'; if (groups[r]) groups[r].push(s); });
+
+    list.innerHTML = RANK_KEYS.map(rank => {
+      if (!groups[rank].length) return '';
+      return `
+        <div style="margin-bottom:6px;margin-top:20px;">
+          <div class="section-label">${RANK_LABELS[rank]}</div>
+        </div>
+        ${groups[rank].map(s => storyCard(s)).join('')}
+      `;
+    }).join('');
+  } else {
+    list.innerHTML = stories.map(s => storyCard(s)).join('');
+  }
+}
+
+function storyCard(s) {
+  return `
     <div class="story-card">
       <div class="story-select">
         <input type="checkbox" class="story-check" ${selectedIds.has(s.id)?'checked':''} onchange="toggleStory('${s.id}')">
@@ -310,17 +357,61 @@ function renderStories(stories) {
           <div class="story-meta">
             <span class="source-tag">${s.source}</span>
             <span class="cat-tag">${s.category}</span>
-            ${s.publishedDate ? `<span class="story-time" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${s.publishedDate}</span>` : ''}
+            ${s.publishedDate ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${s.publishedDate}</span>` : ''}
             ${s.override?'<span class="override-badge">TOP STORY</span>':s.nate?'<span class="nate-badge">NATE ✓</span>':''}
             ${s.repeat?'<span class="repeat-tag">REPEAT?</span>':''}
+            <span style="margin-left:auto;display:flex;gap:6px;">
+              <button id="up-${s.id}" onclick="rateStory('${s.id}',1)" style="background:none;border:none;cursor:pointer;font-size:13px;color:${ratings[s.id]?.val===1?'var(--green)':'var(--muted)'};" title="Good story">👍</button>
+              <button id="down-${s.id}" onclick="rateStory('${s.id}',-1)" style="background:none;border:none;cursor:pointer;font-size:13px;color:${ratings[s.id]?.val===-1?'var(--alert)':'var(--muted)'};" title="Not for us">👎</button>
+            </span>
           </div>
           <div class="story-title">${s.title}</div>
-          ${s.excerpt?`<div class="story-excerpt">${s.excerpt}</div>`:''}
-          ${s.link!=='#'?`<a class="story-link" href="${s.link}" target="_blank" rel="noopener">Read →</a>`:''}
-        </div>
+          ${s.suggestedTitle ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-top:4px;letter-spacing:.06em;">TITLE: <strong>${s.suggestedTitle}</strong></div>` : ''}
+          ${s.excerpt?`<div class="story-excerpt" style="margin-top:4px;">${s.excerpt}</div>`:''}
+          ${s.validUrl
+            ? `<a class="story-link" href="${s.link}" target="_blank" rel="noopener">Read →</a>`
+            : s.link && s.link !== '#'
+              ? `<a class="story-link" href="${s.link}" target="_blank" rel="noopener" style="color:var(--alert);" title="Homepage link -- may not go to article">Read → ⚠</a>`
+              : ''
+          }        </div>
       </div>
-    </div>`).join('');
+    </div>`;
 }
+
+// ─── RATINGS ──────────────────────────────────────────────────────────────────
+let ratings = JSON.parse(localStorage.getItem('1pb_ratings') || '{}');
+
+function rateStory(id, val) {
+  const story = allStories.find(s => s.id === id);
+  if (!story) return;
+  ratings[id] = {
+    val,
+    title:      story.title,
+    source:     story.source,
+    category:   story.category,
+    rank:       story.rank,
+    date:       new Date().toISOString().split('T')[0],
+    hasNumber:  /\$[\d,]+|\d+%|\d+\s*(billion|million|thousand)/i.test(story.title + ' ' + story.excerpt),
+    hasPerson:  /[A-Z][a-z]+ [A-Z][a-z]+/.test(story.title),
+    hasTension: /\b(ban|sue|crash|fail|collapse|fight|probe|shot|kill|warn|block|reject|deny)\b/i.test(story.title + ' ' + story.excerpt),
+  };
+  localStorage.setItem('1pb_ratings', JSON.stringify(ratings));
+  const upBtn   = document.getElementById(`up-${id}`);
+  const downBtn = document.getElementById(`down-${id}`);
+  if (upBtn)   upBtn.style.color   = val === 1  ? 'var(--green)' : 'var(--muted)';
+  if (downBtn) downBtn.style.color = val === -1 ? 'var(--alert)' : 'var(--muted)';
+}
+
+function exportRatings() {
+  const text = JSON.stringify(ratings, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const t = document.getElementById('toast');
+    t.textContent = `${Object.keys(ratings).length} ratings copied`;
+    t.classList.add('show');
+    setTimeout(() => { t.classList.remove('show'); t.textContent = 'Copied to clipboard'; }, 2500);
+  });
+}
+
 
 function filterStories(f, btn) {
   document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
@@ -535,10 +626,10 @@ Paragraph 2: "Plus," or "We also..." + 3 other story previews (2-5 words each). 
 6. TRENDING (exactly 5 bullets)
 Format: ▲ **[First two words bold]** action verb + detail + specific number, max 17 words after arrow
 
-7. FUN LINKS (6-7 items)
+7. FUN LINKS (7-10 items)
 Format: Description [Category]
-Categories: Video, Blog, List, Read, Photos, Gear, Song, Doc, Trailer
-Make these genuinely interesting -- surprising facts, entertaining videos, useful tools, interesting reads.
+Categories: Video, Blog, List, Read, Photos, Gear, Song, Doc, Trailer, Recipe, Resource
+Aim for 8 fun links minimum. Mix of: famous person doing something unexpected, science with human hook, useful tools, cultural surprises, entertaining videos, interesting reads. Check Kottke, Atlas Obscura, Reddit, YouTube for variety. Include at least 2 videos, 2 blogs, 1 unusual category (Recipe, Gear, Photos, Resource).
 
 STYLE RULES (non-negotiable):
 - No em dashes, ever
